@@ -4,11 +4,18 @@
     "indexes": "firestore.indexes.json"
   },
   "hosting": {
+    "site": "nugrade",
     "public": "public",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "rewrites": [
+      { "source": "/math162", "destination": "/math162.html" },
+      { "source": "/phys162", "destination": "/phys162.html" },
+      { "source": "/csci152", "destination": "/csci152.html" },
+      { "source": "/hst100", "destination": "/hst100.html" }
     ]
   },
   "database": {

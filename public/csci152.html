@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSCI152</title>
+
+    <!-- Firebase SDK -->
+    <script defer src="https://www.gstatic.com/firebasejs/11.4.0/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/11.4.0/firebase-auth-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <h1>CSCI152 Data</h1>
+    
+    <div id="summary">
+        <p><strong>Final Grade:</strong> <span id="final-grade">Calculating...</span></p>
+    </div>
+
+    <div id="data-container">Loading...</div>
+    <button id="update-button" style="display: none;">Update</button>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            if (!firebase.apps.length) {
+                firebase.initializeApp({
+                    apiKey: "AIzaSyDgGep8pRJL0FAWPdfN9itD6EGN6nk2n3E",
+                    authDomain: "general-ansar-nu.firebaseapp.com",
+                    projectId: "general-ansar-nu",
+                    storageBucket: "general-ansar-nu.appspot.com",
+                    messagingSenderId: "1098834811917",
+                    appId: "1:1098834811917:web:df4b3be734f5f9e1644944",
+                    measurementId: "G-Y965GPDQJX"
+                });
+            }
+
+            const auth = firebase.auth();
+            const db = firebase.firestore();
+            let userEmail = null;
+
+            function calculateFinalGrade(data) {
+                let qSum = 0, lSum = 0, pSum = 0;
+                let f = parseFloat(data["f"]) || 0;
+                
+                for (let key in data) {
+                    let value = parseFloat(data[key]) || 0;
+                    if (key.match(/^q[1-4]$/)) qSum += value;
+                    else if (key.match(/^l[1-8]$/)) lSum += value;
+                    else if (key.match(/^p[1-2]$/)) pSum += value;
+                }
+                
+                let finalGrade = (qSum * 0.35) + (f / 0.30 * 0.30) + (lSum / 0.40 * 0.10) + (pSum / 2 * 0.25);
+                return finalGrade.toFixed(2);
+            }
+
+            auth.onAuthStateChanged((user) => {
+                if (user && user.email.endsWith("@nu.edu.kz")) {
+                    userEmail = user.email;
+                    console.log("Authenticated as:", userEmail);
+
+                    const docRef = db.collection("csci152").doc(userEmail);
+                    docRef.get().then((doc) => {
+                        if (doc.exists) {
+                            const data = doc.data();
+                            console.log("Fetched Data:", data);
+
+                            let html = '<form id="data-form">';
+                            for (let key in data) {
+                                if (data.hasOwnProperty(key)) {
+                                    let min = 0, max;
+                                    if (key.startsWith("q")) max = 25;
+                                    else if (key === "f") max = 35;
+                                    else if (key.startsWith("l")) max = 5;
+                                    else if (key.startsWith("p")) max = 100;
+                                    else continue;
+
+                                    html += `<p>${key}: <input type="number" id="${key}" value="${data[key]}" min="${min}" max="${max}"></p>`;
+                                }
+                            }
+                            html += '</form>';
+                            document.getElementById("data-container").innerHTML = html;
+                            document.getElementById("update-button").style.display = "block";
+
+                            document.getElementById("final-grade").innerText = calculateFinalGrade(data);
+
+                        } else {
+                            document.getElementById("data-container").innerHTML = `<p>No data found for ${userEmail}.</p>`;
+                        }
+                    }).catch((error) => {
+                        console.error("Error fetching document:", error);
+                        document.getElementById("data-container").innerHTML = `<p>Error loading data.</p>`;
+                    });
+                } else {
+                    window.location.href = "index.html";
+                }
+            });
+
+            document.getElementById("update-button").addEventListener("click", function () {
+                if (!userEmail) return;
+
+                const inputs = document.querySelectorAll("#data-form input");
+                let updateData = {};
+                let valid = true;
+
+                inputs.forEach(input => {
+                    let value = parseFloat(input.value);
+                    let max;
+                    if (input.id.startsWith("q")) max = 25;
+                    else if (input.id === "f") max = 35;
+                    else if (input.id.startsWith("l")) max = 5;
+                    else if (input.id.startsWith("p")) max = 100;
+                    else return;
+
+                    if (isNaN(value) || value < 0 || value > max) {
+                        valid = false;
+                    } else {
+                        updateData[input.id] = value;
+                    }
+                });
+
+                if (!valid) {
+                    alert("Invalid input! Please enter values within the allowed range.");
+                    return;
+                }
+
+                db.collection("csci152").doc(userEmail).update(updateData)
+                    .then(() => {
+                        alert("Data updated successfully!");
+                        document.getElementById("final-grade").innerText = calculateFinalGrade(updateData);
+                    })
+                    .catch((error) => {
+                        console.error("Error updating document:", error);
+                        alert("Failed to update data.");
+                    });
+            });
+        });
+    </script>
+</body>
+</html>
