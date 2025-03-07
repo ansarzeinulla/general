@@ -15,7 +15,6 @@
     
     <div id="summary">
         <p><strong>Percentage:</strong> <span id="percentage">Calculating...</span>%</p>
-        <p><strong>Grade:</strong> <span id="grade">Calculating...</span></p>
     </div>
 
     <div id="data-container">Loading...</div>
@@ -40,17 +39,7 @@
             let userEmail = null;
 
             function calculatePercentage(data) {
-                let totalEarned = (data["q1"] || 0)*0.3 + (data["q2"] || 0)*0.3 + (data["q3"] || 0)*0.3 + (data["h"] || 0)*0.1;
-                //let totalPossible = 30 + 30 + 30 + 10; // Max possible points
-                return ((totalEarned) * 1).toFixed(2);
-            }
-
-            function calculateGrade(percentage) {
-                if (percentage >= 90) return "A";
-                if (percentage >= 80) return "B";
-                if (percentage >= 70) return "C";
-                if (percentage >= 60) return "D";
-                return "F";
+                return parseFloat(((data.q1 || 0) * 0.3 + (data.q2 || 0) * 0.3 + (data.q3 || 0) * 0.3 + (data.h || 0) * 0.1).toFixed(2));
             }
 
             auth.onAuthStateChanged((user) => {
@@ -64,20 +53,19 @@
                             const data = doc.data();
                             console.log("Fetched Data:", data);
 
-                            let html = '<form id="data-form">';
-                            for (let key in data) {
-                                if (data.hasOwnProperty(key)) {
-                                    html += `<p>${key}: <input type="number" id="${key}" value="${data[key]}" min="0" max="30"></p>`;
-                                }
-                            }
-                            html += '</form>';
+                            let html = `
+                                <form id="data-form">
+                                    <p><label>Exam 1:</label> <input type="number" id="q1" value="${data.q1 || 0}" min="0" max="100" step="0.01"></p>
+                                    <p><label>Exam 2:</label> <input type="number" id="q2" value="${data.q2 || 0}" min="0" max="100" step="0.01"></p>
+                                    <p><label>Exam 3:</label> <input type="number" id="q3" value="${data.q3 || 0}" min="0" max="100" step="0.01"></p>
+                                    <p><label>Homework:</label> <input type="number" id="h" value="${data.h || 0}" min="0" max="100" step="0.01"></p>
+                                </form>
+                            `;
                             document.getElementById("data-container").innerHTML = html;
                             document.getElementById("update-button").style.display = "block";
 
-                            // Calculate and display the percentage and grade
                             let percentage = calculatePercentage(data);
                             document.getElementById("percentage").innerText = percentage;
-                            document.getElementById("grade").innerText = calculateGrade(percentage);
                         } else {
                             document.getElementById("data-container").innerHTML = `<p>No data found for ${userEmail}.</p>`;
                         }
@@ -98,7 +86,7 @@
                 let valid = true;
 
                 inputs.forEach(input => {
-                    let value = parseInt(input.value, 10);
+                    let value = parseFloat(input.value);
                     if (isNaN(value) || value < 0 || value > 100) {
                         valid = false;
                     } else {
@@ -107,16 +95,17 @@
                 });
 
                 if (!valid) {
-                    alert("Invalid input! Values must be between 0 and 30.");
+                    alert("Invalid input! Values must be between 0 and 100.");
                     return;
                 }
+
+                let percentage = calculatePercentage(updateData);
+                updateData["grade_p"] = percentage;
 
                 db.collection("math162").doc(userEmail).update(updateData)
                     .then(() => {
                         alert("Data updated successfully!");
-                        let percentage = calculatePercentage(updateData);
                         document.getElementById("percentage").innerText = percentage;
-                        document.getElementById("grade").innerText = calculateGrade(percentage);
                     })
                     .catch((error) => {
                         console.error("Error updating document:", error);

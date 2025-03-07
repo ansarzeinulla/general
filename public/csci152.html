@@ -54,46 +54,46 @@
             }
 
             auth.onAuthStateChanged((user) => {
-                if (user && user.email.endsWith("@nu.edu.kz")) {
-                    userEmail = user.email;
-                    console.log("Authenticated as:", userEmail);
+    if (user && user.email.endsWith("@nu.edu.kz")) {
+        userEmail = user.email;
+        console.log("Authenticated as:", userEmail);
 
-                    const docRef = db.collection("csci152").doc(userEmail);
-                    docRef.get().then((doc) => {
-                        if (doc.exists) {
-                            const data = doc.data();
-                            console.log("Fetched Data:", data);
+        const docRef = db.collection("csci152").doc(userEmail);
+        docRef.get().then((doc) => {
+            if (doc.exists) {
+                const data = doc.data();
+                console.log("Fetched Data:", data);
 
-                            let html = '<form id="data-form">';
-                            for (let key in data) {
-                                if (data.hasOwnProperty(key)) {
-                                    let min = 0, max;
-                                    if (key.startsWith("q")) max = 25;
-                                    else if (key === "f") max = 35;
-                                    else if (key.startsWith("l")) max = 5;
-                                    else if (key.startsWith("p")) max = 100;
-                                    else continue;
+                let html = '<form id="data-form">';
+                for (let key in data) {
+                    if (data.hasOwnProperty(key)) {
+                        let min = 0, max;
+                        if (key.startsWith("q")) max = 25;
+                        else if (key === "f") max = 35;
+                        else if (key.startsWith("l")) max = 5;
+                        else if (key.startsWith("p")) max = 100;
+                        else continue;
 
-                                    html += `<p>${key}: <input type="number" id="${key}" value="${data[key]}" min="${min}" max="${max}"></p>`;
-                                }
-                            }
-                            html += '</form>';
-                            document.getElementById("data-container").innerHTML = html;
-                            document.getElementById("update-button").style.display = "block";
-
-                            document.getElementById("final-grade").innerText = calculateFinalGrade(data);
-
-                        } else {
-                            document.getElementById("data-container").innerHTML = `<p>No data found for ${userEmail}.</p>`;
-                        }
-                    }).catch((error) => {
-                        console.error("Error fetching document:", error);
-                        document.getElementById("data-container").innerHTML = `<p>Error loading data.</p>`;
-                    });
-                } else {
-                    window.location.href = "index.html";
+                        html += `<p>${key}: <input type="number" id="${key}" value="${data[key]}" min="${min}" max="${max}"></p>`;
+                    }
                 }
-            });
+                html += '</form>';
+                document.getElementById("data-container").innerHTML = html;
+                document.getElementById("update-button").style.display = "block";
+
+                document.getElementById("final-grade").innerText = calculateFinalGrade(data);
+
+            } else {
+                document.getElementById("data-container").innerHTML = `<p>No data found for ${userEmail}.</p>`;
+            }
+        }).catch((error) => {
+            console.error("Error fetching document:", error);
+            document.getElementById("data-container").innerHTML = `<p>Error loading data.</p>`;
+        });
+    } else {
+        window.location.href = "index.html";
+    }
+});
 
             document.getElementById("update-button").addEventListener("click", function () {
                 if (!userEmail) return;

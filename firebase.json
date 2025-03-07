@@ -12,6 +12,7 @@
       "**/node_modules/**"
     ],
     "rewrites": [
+      { "source": "/", "destination": "/index.html" },
       { "source": "/math162", "destination": "/math162.html" },
       { "source": "/phys162", "destination": "/phys162.html" },
       { "source": "/csci152", "destination": "/csci152.html" },
